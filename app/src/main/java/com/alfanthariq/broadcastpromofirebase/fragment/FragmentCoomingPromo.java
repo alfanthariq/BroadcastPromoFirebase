@@ -1,6 +1,7 @@
 package com.alfanthariq.broadcastpromofirebase.fragment;
 
 
+import android.app.ProgressDialog;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
@@ -26,6 +27,11 @@ import com.alfanthariq.broadcastpromofirebase.R;
 import com.alfanthariq.broadcastpromofirebase.helper.AfterCropListener;
 import com.alfanthariq.broadcastpromofirebase.orm.Data;
 import com.alfanthariq.broadcastpromofirebase.orm.JenisBarang;
+import com.alfanthariq.broadcastpromofirebase.pojo.CallPojo;
+import com.alfanthariq.broadcastpromofirebase.rest.ApiHelper;
+import com.alfanthariq.broadcastpromofirebase.rest.ApiLibrary;
+import com.alfanthariq.broadcastpromofirebase.rest.ApiListener;
+import com.alfanthariq.broadcastpromofirebase.rest.RetrofitService;
 import com.github.gcacace.signaturepad.views.SignaturePad;
 import com.orm.SugarRecord;
 import com.theartofdev.edmodo.cropper.CropImage;
@@ -35,13 +41,18 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import retrofit2.Response;
 
 import static com.alfanthariq.broadcastpromofirebase.helper.MyFunction.animatePagerTransition;
 import static com.alfanthariq.broadcastpromofirebase.helper.MyFunction.getBitmpatFromUri;
 import static com.alfanthariq.broadcastpromofirebase.helper.MyFunction.getResizedBitmap;
 import static com.alfanthariq.broadcastpromofirebase.helper.MyFunction.isConnectToInternet;
 import static com.alfanthariq.broadcastpromofirebase.helper.MyFunction.saveToInternalStorage;
+import static com.alfanthariq.broadcastpromofirebase.helper.MyFunction.showProgress;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -59,6 +70,7 @@ public class FragmentCoomingPromo extends Fragment {
 
     private List<JenisBarang> jenis;
     private JenisBarang selected_jenis;
+    private ApiHelper apiHelper;
 
     public FragmentCoomingPromo() {
         // Required empty public constructor
@@ -87,9 +99,11 @@ public class FragmentCoomingPromo extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        MainActivity act = (MainActivity) getActivity();
+
+        apiHelper = new ApiHelper(act.getApiLibrary());
 
         pager = getActivity().findViewById(R.id.pager);
-
         imgBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -107,7 +121,6 @@ public class FragmentCoomingPromo extends Fragment {
             }
         });
 
-        MainActivity act = (MainActivity) getActivity();
         act.setAfterCropListener(new AfterCropListener() {
             @Override
             public void onAfterCrop(Uri resultUri) {
@@ -145,12 +158,12 @@ public class FragmentCoomingPromo extends Fragment {
         btn_simpan.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String kode = edt_kode.getText().toString();
-                String nama = edt_nama.getText().toString();
-                Bitmap signature = signaturePad.getSignatureBitmap();
+                final String kode = edt_kode.getText().toString();
+                final String nama = edt_nama.getText().toString();
+                final Bitmap signature = signaturePad.getSignatureBitmap();
                 File file = new File(fotoUri.getPath());
                 Bitmap foto = getBitmpatFromUri(getContext(), fotoUri);
-                Bitmap foto_resized = getResizedBitmap(foto, 360, 360);
+                final Bitmap foto_resized = getResizedBitmap(foto, 360, 360);
                 OutputStream os;
                 try {
                     os = new FileOutputStream(file);
@@ -161,17 +174,58 @@ public class FragmentCoomingPromo extends Fragment {
                     Log.e(getClass().getSimpleName(), "Error writing bitmap", e);
                 }
                 if (isConnectToInternet(getContext())) {
-                    Toast.makeText(getContext(), "Online", Toast.LENGTH_SHORT).show();
+                    Map<String, String> param = new HashMap<>();
+                    param.put("kode", kode);
+                    param.put("nama", nama);
+                    param.put("jenis", Integer.toString(selected_jenis.getIdJenis()));
+                    param.put("sign_path", "123");
+                    param.put("foto_path", "123");
+
+                    final ProgressDialog progressDialog = showProgress(getContext(), "Menyimpan data ...");
+
+                    apiHelper.storeData(param, new ApiListener() {
+                        @Override
+                        public void onBeforeCall() {
+                            progressDialog.show();
+                        }
+
+                        @Override
+                        public void onAfterCall() {
+                            progressDialog.dismiss();
+                        }
+
+                        @Override
+                        public void onSuccessCall(Response<CallPojo> response) {
+                            if (response.body()!=null) {
+                                boolean err = response.body().getError();
+                                if (!err) {
+                                    Toast.makeText(getContext(), "Saved", Toast.LENGTH_SHORT).show();
+                                    reset();
+                                } else {
+                                    saveLocal(kode, nama, signature, foto_resized);
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void onFailedCall() {
+                            saveLocal(kode, nama, signature, foto_resized);
+                        }
+                    });
                 } else {
-                    String local_signature = saveToInternalStorage(getContext(), signature, "signature_".concat(kode).concat(".jpg"));
-                    String local_foto = saveToInternalStorage(getContext(), foto_resized, "foto_".concat(kode).concat(".jpg"));
-                    Data data = new Data(kode, nama, selected_jenis, local_signature, local_foto);
-                    data.save();
-                    reset();
-                    Toast.makeText(getContext(), "Saved", Toast.LENGTH_SHORT).show();
+                    saveLocal(kode, nama, signature, foto_resized);
                 }
             }
         });
+    }
+
+    private void saveLocal(String kode, String nama, Bitmap signature, Bitmap foto_resized){
+        String local_signature = saveToInternalStorage(getContext(), signature, "signature_".concat(kode).concat(".jpg"));
+        String local_foto = saveToInternalStorage(getContext(), foto_resized, "foto_".concat(kode).concat(".jpg"));
+        Data data = new Data(kode, nama, selected_jenis, local_signature, local_foto);
+        data.save();
+        reset();
+        Toast.makeText(getContext(), "Saved", Toast.LENGTH_SHORT).show();
     }
 
     private void reset(){

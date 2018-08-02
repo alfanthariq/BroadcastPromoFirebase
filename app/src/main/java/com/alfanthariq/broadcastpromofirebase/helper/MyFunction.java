@@ -2,6 +2,7 @@ package com.alfanthariq.broadcastpromofirebase.helper;
 
 import android.animation.Animator;
 import android.animation.ValueAnimator;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.graphics.Bitmap;
@@ -14,6 +15,8 @@ import android.provider.MediaStore;
 import android.support.v4.view.ViewPager;
 import android.view.animation.AccelerateInterpolator;
 import android.widget.Toast;
+
+import com.alfanthariq.broadcastpromofirebase.R;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -152,5 +155,15 @@ public class MyFunction {
         Bitmap resizedBitmap = Bitmap.createBitmap(bm, 0, 0, width, height, matrix, false);
         return resizedBitmap;
 
+    }
+
+    public static ProgressDialog showProgress(Context context, String message){
+        ProgressDialog pDialog = new ProgressDialog(context, R.style.AppTheme);
+        pDialog.setMessage(message);
+        pDialog.setIndeterminate(false);
+        pDialog.setMax(100);
+        pDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        pDialog.setCancelable(false);
+        return pDialog;
     }
 }

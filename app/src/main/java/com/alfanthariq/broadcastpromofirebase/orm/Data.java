@@ -26,4 +26,24 @@ public class Data extends SugarRecord {
         this.signaturePath = signaturePath;
         this.fotoPath = fotoPath;
     }
+
+    public String getKode() {
+        return kode;
+    }
+
+    public String getNama() {
+        return nama;
+    }
+
+    public JenisBarang getJenisBarang() {
+        return jenisBarang;
+    }
+
+    public String getSignaturePath() {
+        return signaturePath;
+    }
+
+    public String getFotoPath() {
+        return fotoPath;
+    }
 }

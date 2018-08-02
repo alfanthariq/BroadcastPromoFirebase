@@ -16,6 +16,8 @@ import com.alfanthariq.broadcastpromofirebase.fragment.FragmentActivePromo;
 import com.alfanthariq.broadcastpromofirebase.fragment.FragmentCoomingPromo;
 import com.alfanthariq.broadcastpromofirebase.fragment.FragmentMenu;
 import com.alfanthariq.broadcastpromofirebase.helper.AfterCropListener;
+import com.alfanthariq.broadcastpromofirebase.rest.ApiLibrary;
+import com.alfanthariq.broadcastpromofirebase.rest.RetrofitService;
 import com.theartofdev.edmodo.cropper.CropImage;
 
 import java.util.ArrayList;
@@ -27,6 +29,7 @@ public class MainActivity extends AppCompatActivity {
     private float thresholdOffset = 0.01f;
     private boolean goRight, checkDirection = true, stopScroll;
     private AfterCropListener afterCropListener;
+    public ApiLibrary apiLibrary;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         pager = findViewById(R.id.pager);
+        apiLibrary = RetrofitService.createService(ApiLibrary.class);
 
         final FragmentActivePromo fragmentActivePromo = FragmentActivePromo.newInstance();
         FragmentMenu fragmentMenu = FragmentMenu.newInstance();
@@ -134,5 +138,9 @@ public class MainActivity extends AppCompatActivity {
 
     public void setAfterCropListener(AfterCropListener afterCropListener) {
         this.afterCropListener = afterCropListener;
+    }
+
+    public ApiLibrary getApiLibrary() {
+        return apiLibrary;
     }
 }
