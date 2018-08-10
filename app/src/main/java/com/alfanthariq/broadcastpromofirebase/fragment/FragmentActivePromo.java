@@ -47,6 +47,7 @@ public class FragmentActivePromo extends Fragment {
     private AfterCreateListener afterCreateListener;
     private TextView txt;
     private ImageButton btn_sync;
+    private TextView txt_location;
 
     public void setAfterCreateListener(AfterCreateListener afterCreateListener) {
         this.afterCreateListener = afterCreateListener;
@@ -82,6 +83,7 @@ public class FragmentActivePromo extends Fragment {
         layoutModal = v.findViewById(R.id.layoutModal);
         txt = v.findViewById(R.id.txt);
         btn_sync = v.findViewById(R.id.btn_sync);
+        txt_location = v.findViewById(R.id.txt_location);
         return v;
     }
 
@@ -186,5 +188,9 @@ public class FragmentActivePromo extends Fragment {
 
     public interface AfterCreateListener{
         void onAfterCreate();
+    }
+
+    public TextView getTxt_location() {
+        return txt_location;
     }
 }
